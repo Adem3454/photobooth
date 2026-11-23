@@ -13,59 +13,99 @@
 <meta name="theme-color" content="#111111">
 <script async src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
+:root{color-scheme:dark;--card:#1c1c1e;--card2:#2c2c2e;--tx2:#8e8e93;--blue:#0a84ff;--red:#ff453a;--green:#30d158}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:#111;color:#fff;font-family:-apple-system,system-ui,sans-serif}
-main{height:100dvh;display:flex;flex-direction:column;align-items:center;gap:14px;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);overflow:auto}
-main[hidden]{display:none}
-.stage{position:relative;width:100%;max-width:480px;aspect-ratio:4/3;background:#000;border-radius:14px;overflow:hidden}
-video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-#count{position:absolute;inset:0;display:grid;place-items:center;font-size:120px;font-weight:700;text-shadow:0 2px 12px #0008}
-#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
-#flash.on{opacity:1;transition:none}
-#dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:8px}
-#dots i{width:10px;height:10px;border-radius:50%;background:#fff5}
-#dots i.on{background:#fff}
-.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.chip{padding:8px 14px;border-radius:99px;border:1px solid #fff4;background:transparent;color:#fff;font-size:15px}
-.chip.sel{background:#fff;color:#111}
-.sw{width:34px;height:34px;border-radius:50%;border:2px solid #fff4}
-.sw.sel{border-color:#fff;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
-button.main{padding:16px 40px;border:0;border-radius:99px;background:#ff4d6d;color:#fff;font-size:18px;font-weight:600}
-button.ghost{background:#333}
-#out,#gifout{max-height:calc(100dvh - 140px);max-width:100%;border-radius:6px;box-shadow:0 6px 30px #0008}
-#msg{color:#ffb4b4;margin:0;text-align:center}
-.flip{position:absolute;top:10px;right:10px;z-index:2;background:#0006;border-color:#fff6;padding:6px 10px}
+html,body{margin:0;height:100%;background:#000;color:#fff;font:17px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 [hidden]{display:none!important}
-.stage{display:flex}video{min-width:0}
-input{padding:14px;border-radius:12px;border:1px solid #fff4;background:#222;color:#fff;font-size:20px;text-align:center;width:130px;text-transform:uppercase}
-#rem{justify-content:center}#rmsg{text-align:center;color:#9fe3a8;margin:0}
+main{height:100dvh;display:flex;flex-direction:column;align-items:center;gap:14px;padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 14px);overflow:auto;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.bar{width:100%;max-width:480px;height:52px;flex:none;display:flex;align-items:center;justify-content:space-between}
+.bar h1{margin:0;font-size:17px;font-weight:600}
+.ib{width:40px;height:40px;border-radius:50%;border:0;background:var(--card);color:var(--blue);display:grid;place-items:center;transition:transform .15s}
+.ib svg,.glass svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stage{position:relative;display:flex;width:100%;max-width:480px;aspect-ratio:4/3;background:#111;border-radius:24px;overflow:hidden;box-shadow:0 12px 40px #000a;flex:none}
+video{flex:1;min-width:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.glass{position:absolute;top:10px;right:10px;z-index:2;width:38px;height:38px;border-radius:50%;border:0;color:#fff;background:#0007;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:grid;place-items:center;transition:transform .15s}
+#count{position:absolute;inset:0;display:grid;place-items:center;font-size:130px;font-weight:700;text-shadow:0 4px 24px #0009;pointer-events:none}
+#count.pop{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(1.9);opacity:0}to{transform:scale(1);opacity:1}}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .4s}
+#flash.on{opacity:1;transition:none}
+#dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:6px}
+#dots i{width:8px;height:8px;border-radius:50%;background:#fff5;transition:.25s}
+#dots i.on{background:#fff;transform:scale(1.3)}
 #stk{position:absolute;inset:0;pointer-events:none;overflow:hidden}#stk span{position:absolute;line-height:1}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.chip{border:0;background:var(--card2);color:#fff;border-radius:99px;padding:9px 16px;font:500 15px -apple-system,system-ui,sans-serif;transition:transform .15s,background .2s}
+.chip.sel{background:var(--blue)}
+.sw{width:38px;height:38px;border-radius:50%;border:2px solid #fff3;transition:transform .15s}
+.sw.sel{box-shadow:0 0 0 2px #1c1c1e,0 0 0 4px #fff}
+.seg{display:flex;width:100%;max-width:480px;flex:none;background:var(--card);border-radius:10px;padding:2px;gap:2px}
+.seg button{flex:1;border:0;background:transparent;color:#fff;padding:8px 4px;border-radius:8px;font:500 14px -apple-system,system-ui,sans-serif;transition:background .2s}
+.seg .sel,.seg .on{background:#636366;box-shadow:0 1px 4px #0006}
+.ib:active,.glass:active,.chip:active,.sw:active,.btn:active{transform:scale(.94)}
+.shutter{margin-top:auto;flex:none;width:78px;height:78px;border-radius:50%;border:4px solid #fff;background:transparent;padding:0;display:grid;place-items:center;transition:transform .12s,border-color .2s}
+.shutter span{width:62px;height:62px;border-radius:50%;background:#fff;transition:transform .2s,background .2s,border-radius .2s}
+.shutter:active span{transform:scale(.88)}
+.shutter:disabled{border-color:var(--red);animation:pulse 1s infinite}
+.shutter:disabled span{background:var(--red);transform:scale(.55);border-radius:16px}
+@keyframes pulse{50%{transform:scale(1.07)}}
+.btn{width:100%;max-width:480px;border:0;border-radius:14px;padding:15px;font:600 17px -apple-system,system-ui,sans-serif;transition:transform .15s}
+.primary{background:var(--blue);color:#fff}.tint{background:var(--card2);color:var(--blue)}
+.two{display:flex;gap:10px;width:100%;max-width:480px}.two .btn{flex:1}
+input{background:var(--card2);border:0;border-radius:12px;color:#fff;padding:12px 14px;font:17px -apple-system,system-ui,sans-serif;width:100%;outline:none}
+input::placeholder{color:var(--tx2)}
+#code{width:110px;text-align:center;letter-spacing:4px;text-transform:uppercase;font-weight:600}
+#msg{min-height:20px;margin:0;font-size:14px;color:var(--red);text-align:center}
+#rem{justify-content:flex-start}#rmsg{text-align:center;color:var(--green);margin:0;min-height:22px}
+.hint,.or{color:var(--tx2);font-size:15px;text-align:center;margin:0;max-width:340px}
+.imgwrap{flex:1;display:grid;place-items:center;width:100%;min-height:0}
+#out,#gifout{max-width:100%;max-height:calc(100dvh - 250px);border-radius:8px;box-shadow:0 14px 40px #000c;animation:rise .6s cubic-bezier(.2,1.2,.4,1)}
+@keyframes rise{from{transform:translateY(50px) scale(.9);opacity:0}}
+#scrim{position:fixed;inset:0;background:#0008;opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}#scrim.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;z-index:21;background:#1c1c1ee8;-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);border-radius:26px 26px 0 0;padding:8px 16px calc(env(safe-area-inset-bottom) + 16px);transform:translateY(105%);visibility:hidden;transition:transform .45s cubic-bezier(.32,1.2,.4,1),visibility 0s .45s}
+#sheet.open{transform:none;visibility:visible;transition:transform .45s cubic-bezier(.32,1.2,.4,1)}
+.grab{width:36px;height:5px;border-radius:3px;background:#5a5a5e;margin:0 auto 12px}
+.panel{display:flex;flex-direction:column;gap:14px;padding:16px 0;min-height:130px}
+.cf{position:fixed;top:-14px;width:8px;height:12px;border-radius:2px;z-index:50;pointer-events:none;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translate(var(--dx),108vh) rotate(540deg)}}
 </style>
 </head>
 <body>
 <main id="cam">
-  <div class="stage"><video id="v" playsinline muted autoplay></video><video id="rv" playsinline muted autoplay hidden></video><div id="count"></div><div id="flash"></div><div id="stk"></div><div id="dots"></div><button class="chip flip" id="flip">🔄</button></div>
-  <div class="row" id="tpls"></div>
-  <div class="row"><button class="chip" id="remote">👥 Uzaktan çekim</button></div>
-  <div class="row" id="filters"></div>
-  <div class="row" id="colors"></div>
-  <div class="row" id="themes"></div>
-  <div class="row" id="stks"></div>
-  <input id="cap" maxlength="22" placeholder="Alt yazı (isteğe bağlı)" style="width:240px;text-transform:none">
-  <button class="main" id="go">Çekime başla</button>
+  <header class="bar">
+    <button class="ib" id="remote" aria-label="Uzaktan çekim"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.4c1.9.8 3 2.7 3 5.6"/></svg></button>
+    <h1>Photobooth</h1>
+    <button class="ib" id="styleBtn" aria-label="Stil"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+  </header>
+  <div class="stage"><video id="v" playsinline muted autoplay></video><video id="rv" playsinline muted autoplay hidden></video><div id="count"></div><div id="flash"></div><div id="stk"></div><div id="dots"></div>
+    <button class="glass" id="flip" aria-label="Kamerayı çevir"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 0-14-5.3L4 9M4 4v5h5M4 12a8 8 0 0 0 14 5.3L20 15M20 20v-5h-5"/></svg></button></div>
+  <div class="seg" id="tpls"></div>
   <p id="msg"></p>
+  <button class="shutter" id="go" aria-label="Çekime başla"><span></span></button>
 </main>
+<div id="scrim"></div>
+<section id="sheet" aria-label="Stil">
+  <div class="grab"></div>
+  <div class="seg" id="tabs"><button class="on" data-t="p-filters">Filtre</button><button data-t="p-frame">Çerçeve</button><button data-t="p-stk">Çıkartma</button></div>
+  <div class="panel" id="p-filters"><div class="row" id="filters"></div></div>
+  <div class="panel" id="p-frame" hidden><div class="row" id="colors"></div><div class="row" id="themes"></div><input id="cap" maxlength="22" placeholder="Alt yazı (isteğe bağlı)"></div>
+  <div class="panel" id="p-stk" hidden><div class="row" id="stks"></div></div>
+  <button class="btn primary" id="sheetDone">Bitti</button>
+</section>
 <main id="rem" hidden>
-  <h2>Uzaktan photobooth</h2>
-  <button class="main" id="mkroom">Oda kur</button>
-  <div class="row"><input id="code" maxlength="4" placeholder="KOD" autocapitalize="characters"><button class="main ghost" id="join">Katıl</button></div>
+  <header class="bar"><button class="ib" id="rback" aria-label="Geri"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h1>Uzaktan çekim</h1><span style="width:40px"></span></header>
+  <p class="hint">Farklı yerlerdeki arkadaşınla aynı şeritte yer alın.</p>
+  <button class="btn primary" id="mkroom">Oda kur</button>
+  <p class="or">veya kodla katıl</p>
+  <div class="row"><input id="code" maxlength="4" placeholder="KOD" autocapitalize="characters"><button class="btn tint" id="join" style="width:auto;padding:12px 26px">Katıl</button></div>
   <p id="rmsg"></p>
-  <button class="chip" id="rback">Geri</button>
 </main>
 <main id="res" hidden>
-  <img id="out" alt="Photobooth şeridi"><img id="gifout" alt="GIF" hidden>
-  <div class="row" id="viewrow" hidden><button class="chip sel" id="vPhoto">Fotoğraf</button><button class="chip" id="vGif">GIF</button></div>
-  <div class="row"><button class="main" id="share">Paylaş / Kaydet</button><button class="main ghost" id="mkgif" hidden>GIF yap</button><button class="main ghost" id="again">Yeniden çek</button></div>
+  <div class="seg" id="viewrow" hidden style="margin-top:14px"><button class="chip sel" id="vPhoto">Fotoğraf</button><button class="chip" id="vGif">GIF</button></div>
+  <div class="imgwrap"><img id="out" alt="Photobooth şeridi"><img id="gifout" alt="GIF" hidden></div>
+  <button class="btn primary" id="share">Paylaş / Kaydet</button>
+  <div class="two"><button class="btn tint" id="mkgif" hidden>GIF yap</button><button class="btn tint" id="again">Yeniden çek</button></div>
 </main>
 <script>
 const $=s=>document.querySelector(s);
@@ -129,12 +169,12 @@ async function run(){
   if(busy)return;busy=true;$('#go').disabled=true;const shots=[];
   const N=TPL[tpl].n;setDots(N);for(let i=0;i<N;i++){
     dots.forEach((d,j)=>d.classList.toggle('on',j<i));
-    for(let n=3;n>0;n--){count.textContent=n;beep(660);await wait(1000)}
+    for(let n=3;n>0;n--){count.textContent=n;pop();beep(660);await wait(1000)}
     count.textContent='';beep(1200,.15);flash.classList.add('on');shots.push(grab());await wait(120);flash.classList.remove('on');await wait(900);
   }
   dots.forEach(d=>d.classList.add('on'));
   if(tpl==='duo'){busy=false;$('#go').disabled=false;dots.forEach(d=>d.classList.remove('on'));finishDuo(shots);return}
-  lastShots=shots;layout(shots).toBlob(b=>{blob=photoBlob=b;gifBlob=null;$('#mkgif').hidden=shots.length<2;$('#viewrow').hidden=true;showView('photo');$('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false;busy=false;$('#go').disabled=false;dots.forEach(d=>d.classList.remove('on'))},'image/jpeg',.92);
+  lastShots=shots;layout(shots).toBlob(b=>{blob=photoBlob=b;gifBlob=null;$('#mkgif').hidden=shots.length<2;$('#viewrow').hidden=true;showView('photo');$('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false;confetti();busy=false;$('#go').disabled=false;dots.forEach(d=>d.classList.remove('on'))},'image/jpeg',.92);
 }
 
 /* ---- GIF ---- */
@@ -275,7 +315,7 @@ function tryCompose(){
     x.font='bold 44px Georgia,serif';x.fillText(capt(),c.width/2,c.height-FT/2+5);
     x.font='26px Georgia,serif';x.fillText(new Date().toLocaleDateString('tr-TR'),c.width/2,c.height-FT/2+45);
     c.toBlob(b=>{lastShots=[];blob=photoBlob=b;gifBlob=null;$('#mkgif').hidden=true;$('#viewrow').hidden=true;showView('photo');
-      $('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false},'image/jpeg',.92);
+      $('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false;confetti()},'image/jpeg',.92);
   });
 }
 $('#go').onclick=()=>{if(conn&&role==='host')conn.send({t:'go'});run()};
@@ -286,6 +326,17 @@ $('#share').onclick=async()=>{
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){}}
   else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm();a.click()}
 };
+function pop(){count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop')}
+function confetti(){const k=['#ff453a','#ff9f0a','#ffd60a','#30d158','#0a84ff','#bf5af2'];
+  for(let i=0;i<30;i++){const p=document.createElement('i');p.className='cf';
+    p.style.cssText='left:'+Math.random()*100+'%;background:'+k[i%6]+';animation-delay:'+Math.random()*.3+'s;--dx:'+(Math.random()*160-80)+'px';
+    document.body.append(p);setTimeout(()=>p.remove(),2200)}}
+const sheet=$('#sheet'),scrim=$('#scrim');
+function openSheet(o){sheet.classList.toggle('open',o);scrim.classList.toggle('on',o)}
+$('#styleBtn').onclick=()=>openSheet(true);scrim.onclick=$('#sheetDone').onclick=()=>openSheet(false);
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!==b.dataset.t)});
 $('#flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCam()};
 startCam();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
