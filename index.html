@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Photobooth">
 <meta name="theme-color" content="#111111">
+<script async src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#111;color:#fff;font-family:-apple-system,system-ui,sans-serif}
@@ -34,16 +35,28 @@ button.ghost{background:#333}
 #out,#gifout{max-height:calc(100dvh - 140px);max-width:100%;border-radius:6px;box-shadow:0 6px 30px #0008}
 #msg{color:#ffb4b4;margin:0;text-align:center}
 .flip{position:absolute;top:10px;right:10px;z-index:2;background:#0006;border-color:#fff6;padding:6px 10px}
+[hidden]{display:none!important}
+.stage{display:flex}video{min-width:0}
+input{padding:14px;border-radius:12px;border:1px solid #fff4;background:#222;color:#fff;font-size:20px;text-align:center;width:130px;text-transform:uppercase}
+#rem{justify-content:center}#rmsg{text-align:center;color:#9fe3a8;margin:0}
 </style>
 </head>
 <body>
 <main id="cam">
-  <div class="stage"><video id="v" playsinline muted autoplay></video><div id="count"></div><div id="flash"></div><div id="dots"></div><button class="chip flip" id="flip">🔄</button></div>
+  <div class="stage"><video id="v" playsinline muted autoplay></video><video id="rv" playsinline muted autoplay hidden></video><div id="count"></div><div id="flash"></div><div id="dots"></div><button class="chip flip" id="flip">🔄</button></div>
   <div class="row" id="tpls"></div>
+  <div class="row"><button class="chip" id="remote">👥 Uzaktan çekim</button></div>
   <div class="row" id="filters"></div>
   <div class="row" id="colors"></div>
   <button class="main" id="go">Çekime başla</button>
   <p id="msg"></p>
+</main>
+<main id="rem" hidden>
+  <h2>Uzaktan photobooth</h2>
+  <button class="main" id="mkroom">Oda kur</button>
+  <div class="row"><input id="code" maxlength="4" placeholder="KOD" autocapitalize="characters"><button class="main ghost" id="join">Katıl</button></div>
+  <p id="rmsg"></p>
+  <button class="chip" id="rback">Geri</button>
 </main>
 <main id="res" hidden>
   <img id="out" alt="Photobooth şeridi"><img id="gifout" alt="GIF" hidden>
@@ -112,6 +125,7 @@ async function run(){
     count.textContent='';beep(1200,.15);flash.classList.add('on');shots.push(grab());await wait(120);flash.classList.remove('on');await wait(900);
   }
   dots.forEach(d=>d.classList.add('on'));
+  if(tpl==='duo'){busy=false;$('#go').disabled=false;dots.forEach(d=>d.classList.remove('on'));finishDuo(shots);return}
   lastShots=shots;layout(shots).toBlob(b=>{blob=photoBlob=b;gifBlob=null;$('#mkgif').hidden=shots.length<2;$('#viewrow').hidden=true;showView('photo');$('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false;busy=false;$('#go').disabled=false;dots.forEach(d=>d.classList.remove('on'))},'image/jpeg',.92);
 }
 
@@ -165,7 +179,70 @@ $('#mkgif').onclick=async()=>{
   }catch(e){alert('GIF oluşturulamadı')}
   b.disabled=false;b.textContent='GIF yap';
 };
-$('#go').onclick=run;
+
+/* ---- Uzaktan photobooth (PeerJS) ---- */
+let peer=null,conn=null,role=null,prevTpl='strip',myShots=null,theirShots=null;
+TPL.duo={label:'Uzaktan',n:4,w:480,h:360,asp:'4/3'};
+const CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',rm=t=>$('#rmsg').textContent=t;
+$('#remote').onclick=()=>{$('#cam').hidden=true;$('#rem').hidden=false};
+$('#rback').onclick=()=>{$('#rem').hidden=true;$('#cam').hidden=false};
+function connected(){
+  if(tpl==='duo')return;
+  prevTpl=tpl;tpl='duo';$('.stage').style.aspectRatio='8/3';setDots(4);
+  $('#rem').hidden=true;$('#cam').hidden=false;$('#tpls').hidden=true;$('#flip').hidden=true;$('#go').hidden=role==='guest';
+  $('#msg').style.color='#9fe3a8';$('#msg').textContent=role==='host'?'Bağlandı! Çekimi sen başlat.':'Bağlandı! Çekimi oda sahibi başlatır.';
+}
+function leave(){
+  if(tpl==='duo')setTpl(prevTpl);
+  $('#rv').hidden=true;$('#tpls').hidden=false;$('#flip').hidden=false;$('#go').hidden=false;
+  myShots=theirShots=null;conn=null;role=null;if(peer){peer.destroy();peer=null}
+  $('#msg').textContent='';
+}
+function wire(c){
+  conn=c;
+  c.on('data',d=>{if(d.t==='go')run();else if(d.t==='shots'){theirShots=d.imgs;tryCompose()}});
+  c.on('close',()=>{leave();$('#msg').style.color='#ffb4b4';$('#msg').textContent='Bağlantı koptu.'});
+}
+function showRemote(s,first){const r=$('#rv');r.srcObject=s;r.hidden=false;if(first)r.style.order=-1;r.play().catch(()=>{});connected()}
+$('#mkroom').onclick=()=>{
+  if(!window.Peer)return rm('Bağlantı kütüphanesi yüklenemedi, internet gerekli.');
+  const code=[...Array(4)].map(()=>CH[Math.random()*CH.length|0]).join('');
+  role='host';peer=new Peer('pbooth-'+code);
+  peer.on('open',()=>rm('Oda kodu: '+code+'. Arkadaşın Katıl diyip bu kodu girsin.'));
+  peer.on('error',e=>rm('Hata: '+e.type+(e.type==='unavailable-id'?' (tekrar dene)':'')));
+  peer.on('connection',c=>wire(c));
+  peer.on('call',call=>{call.answer(v.srcObject);call.on('stream',s=>showRemote(s,false))});
+};
+$('#join').onclick=()=>{
+  if(!window.Peer)return rm('Bağlantı kütüphanesi yüklenemedi, internet gerekli.');
+  const code=$('#code').value.trim().toUpperCase();if(code.length!==4)return rm('4 haneli kodu gir.');
+  role='guest';peer=new Peer();
+  peer.on('error',e=>rm('Hata: '+e.type));
+  peer.on('open',()=>{rm('Bağlanıyor…');const c=peer.connect('pbooth-'+code,{reliable:true});wire(c);
+    c.on('open',()=>{const call=peer.call('pbooth-'+code,v.srcObject);call.on('stream',s=>showRemote(s,true))})});
+};
+function finishDuo(shots){
+  myShots=shots.map(c=>c.toDataURL('image/jpeg',.8));
+  if(conn)conn.send({t:'shots',imgs:myShots});
+  tryCompose();
+}
+function tryCompose(){
+  if(!myShots||!theirShots)return;
+  const mine=myShots,theirs=theirShots;myShots=theirShots=null;
+  const left=role==='host'?mine:theirs,right=role==='host'?theirs:mine;
+  Promise.all([...left,...right].map(u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=u}))).then(im=>{
+    const w=480,h=360,P=40,G=24,FT=150,c=document.createElement('canvas');c.width=2*w+G+2*P;c.height=P+4*h+3*G+FT;
+    const x=c.getContext('2d');x.fillStyle=frame;x.fillRect(0,0,c.width,c.height);
+    for(let i=0;i<4;i++){x.drawImage(im[i],P,P+i*(h+G));x.drawImage(im[4+i],P+w+G,P+i*(h+G))}
+    x.fillStyle=frame==='#111111'?'#fff':'#222';x.textAlign='center';
+    x.font='bold 44px Georgia,serif';x.fillText('photobooth',c.width/2,c.height-FT/2+5);
+    x.font='26px Georgia,serif';x.fillText(new Date().toLocaleDateString('tr-TR'),c.width/2,c.height-FT/2+45);
+    c.toBlob(b=>{lastShots=[];blob=photoBlob=b;gifBlob=null;$('#mkgif').hidden=true;$('#viewrow').hidden=true;showView('photo');
+      $('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false},'image/jpeg',.92);
+  });
+}
+$('#go').onclick=()=>{if(conn&&role==='host')conn.send({t:'go'});run()};
+
 $('#again').onclick=()=>{$('#res').hidden=true;$('#cam').hidden=false};
 $('#share').onclick=async()=>{
   const f=new File([blob],nm(),{type:blob.type});
