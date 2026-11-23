@@ -39,15 +39,19 @@ button.ghost{background:#333}
 .stage{display:flex}video{min-width:0}
 input{padding:14px;border-radius:12px;border:1px solid #fff4;background:#222;color:#fff;font-size:20px;text-align:center;width:130px;text-transform:uppercase}
 #rem{justify-content:center}#rmsg{text-align:center;color:#9fe3a8;margin:0}
+#stk{position:absolute;inset:0;pointer-events:none;overflow:hidden}#stk span{position:absolute;line-height:1}
 </style>
 </head>
 <body>
 <main id="cam">
-  <div class="stage"><video id="v" playsinline muted autoplay></video><video id="rv" playsinline muted autoplay hidden></video><div id="count"></div><div id="flash"></div><div id="dots"></div><button class="chip flip" id="flip">🔄</button></div>
+  <div class="stage"><video id="v" playsinline muted autoplay></video><video id="rv" playsinline muted autoplay hidden></video><div id="count"></div><div id="flash"></div><div id="stk"></div><div id="dots"></div><button class="chip flip" id="flip">🔄</button></div>
   <div class="row" id="tpls"></div>
   <div class="row"><button class="chip" id="remote">👥 Uzaktan çekim</button></div>
   <div class="row" id="filters"></div>
   <div class="row" id="colors"></div>
+  <div class="row" id="themes"></div>
+  <div class="row" id="stks"></div>
+  <input id="cap" maxlength="22" placeholder="Alt yazı (isteğe bağlı)" style="width:240px;text-transform:none">
   <button class="main" id="go">Çekime başla</button>
   <p id="msg"></p>
 </main>
@@ -65,7 +69,8 @@ input{padding:14px;border-radius:12px;border:1px solid #fff4;background:#222;col
 </main>
 <script>
 const $=s=>document.querySelector(s);
-const v=$('#v'),count=$('#count'),flash=$('#flash'),let dots=[];
+const v=$('#v'),count=$('#count'),flash=$('#flash');
+let dots=[];
 let lastShots=[],photoBlob=null,gifBlob=null,tpl='strip',facing='user',filter='none',frame='#ffffff',busy=false,blob=null;
 const sp=(r,g,b)=>[.393*r+.769*g+.189*b,.349*r+.686*g+.168*b,.272*r+.534*g+.131*b];
 const F={
@@ -77,7 +82,7 @@ const F={
 const COLORS=['#ffffff','#111111','#ffc2d1','#bde0fe'];
 const TPL={strip:{label:'Şerit',n:4,w:640,h:480,asp:'4/3'},polaroid:{label:'Polaroid',n:1,w:600,h:600,asp:'1/1'},grid:{label:'Kolaj 2x2',n:4,w:640,h:480,asp:'4/3'}};
 function setDots(n){const d=$('#dots');d.innerHTML='<i></i>'.repeat(n);dots=[...d.children]}
-function setTpl(k){tpl=k;$('.stage').style.aspectRatio=TPL[k].asp;setDots(TPL[k].n)}
+function setTpl(k){tpl=k;$('.stage').style.aspectRatio=TPL[k].asp;setDots(TPL[k].n);placeStk()}
 Object.entries(TPL).forEach(([k,t])=>{const b=document.createElement('button');b.className='chip'+(k===tpl?' sel':'');b.textContent=t.label;
   b.onclick=()=>{setTpl(k);document.querySelectorAll('#tpls .chip').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};$('#tpls').append(b)});
 setDots(4);
@@ -85,7 +90,7 @@ setDots(4);
 Object.entries(F).forEach(([k,f])=>{const b=document.createElement('button');b.className='chip'+(k===filter?' sel':'');b.textContent=f.label;
   b.onclick=()=>{filter=k;v.style.filter=f.css;document.querySelectorAll('#filters .chip').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};$('#filters').append(b)});
 COLORS.forEach(c=>{const b=document.createElement('button');b.className='sw'+(c===frame?' sel':'');b.style.background=c;
-  b.onclick=()=>{frame=c;document.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};$('#colors').append(b)});
+  b.onclick=()=>{frame=c;setTheme('none');document.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};$('#colors').append(b)});
 
 async function startCam(){
   try{
@@ -102,6 +107,9 @@ function grab(){
   x.drawImage(v,(vw-sw)/2,(vh-sh)/2,sw,sh,0,0,w,h);
   const p=F[filter].px;
   if(p){const d=x.getImageData(0,0,w,h),a=d.data;for(let i=0;i<a.length;i+=4){const o=p(a[i],a[i+1],a[i+2]);a[i]=o[0];a[i+1]=o[1];a[i+2]=o[2]}x.putImageData(d,0,0)}
+  const st=STK[stk];
+  if(st.e.length){x.setTransform(1,0,0,1,0,0);x.font=Math.round(h*.22)+'px serif';x.textAlign='center';x.textBaseline='middle';
+    POS.forEach((p,i)=>{x.save();x.translate(p.x*w,p.y*h);x.rotate(p.r);x.fillText(st.e[i%st.e.length],0,0);x.restore()})}
   return c;
 }
 function layout(shots){
@@ -109,10 +117,10 @@ function layout(shots){
   if(tpl==='strip'){c.width=w+2*P;c.height=P+4*h+3*G+FT}
   else if(tpl==='grid'){FT=130;c.width=2*w+G+2*P;c.height=P+2*h+G+FT}
   else{FT=170;c.width=w+2*P;c.height=P+h+FT}
-  const x=c.getContext('2d');x.fillStyle=frame;x.fillRect(0,0,c.width,c.height);
+  const x=c.getContext('2d');bg(x,c);
   shots.forEach((s,i)=>{const px=tpl==='grid'?P+(i%2)*(w+G):P,py=tpl==='strip'?P+i*(h+G):tpl==='grid'?P+Math.floor(i/2)*(h+G):P;x.drawImage(s,px,py)});
-  x.fillStyle=ink;x.textAlign='center';
-  x.font='bold 44px Georgia,serif';x.fillText('photobooth',c.width/2,c.height-FT/2+5);
+  x.fillStyle=inkc();x.textAlign='center';
+  x.font='bold 44px Georgia,serif';x.fillText(capt(),c.width/2,c.height-FT/2+5);
   x.font='26px Georgia,serif';x.fillText(new Date().toLocaleDateString('tr-TR'),c.width/2,c.height-FT/2+45);
   return c;
 }
@@ -172,7 +180,7 @@ $('#vPhoto').onclick=()=>showView('photo');$('#vGif').onclick=()=>showView('gif'
 $('#mkgif').onclick=async()=>{
   const b=$('#mkgif');b.disabled=true;b.textContent='Hazırlanıyor…';await wait(60);
   try{
-    const GW=360,GH=270,fs=lastShots.map(s=>{const c=document.createElement('canvas');c.width=GW;c.height=GH;const x=c.getContext('2d');x.fillStyle=frame;x.fillRect(0,0,GW,GH);x.drawImage(s,10,10,GW-20,GH-20);return c});
+    const GW=360,GH=270,fs=lastShots.map(s=>{const c=document.createElement('canvas');c.width=GW;c.height=GH;const x=c.getContext('2d');bg(x,c);x.drawImage(s,10,10,GW-20,GH-20);return c});
     const n=fs.length,order=[...fs.keys(),...[...fs.keys()].slice(1,n-1).reverse()];
     gifBlob=makeGif(fs,order,60);
     $('#gifout').src=URL.createObjectURL(gifBlob);$('#viewrow').hidden=false;showView('gif');
@@ -180,12 +188,41 @@ $('#mkgif').onclick=async()=>{
   b.disabled=false;b.textContent='GIF yap';
 };
 
+/* ---- Temalar, çıkartmalar, alt yazı ---- */
+const THEMES={
+  none:{label:'Klasik',title:'photobooth'},
+  sunset:{label:'Gün batımı',g:['#ff9a9e','#fecfef'],ink:'#5a2a3a',title:'photobooth'},
+  ocean:{label:'Okyanus',g:['#a1c4fd','#c2e9fb'],ink:'#12355b',title:'photobooth'},
+  grad:{label:'Mezuniyet',bg:'#1b2a4a',ink:'#ffd166',title:'Mezuniyet '+new Date().getFullYear()+' 🎓'},
+  bday:{label:'Doğum günü',bg:'#ffe5ec',ink:'#c9184a',title:'Doğum günü 🎂'},
+  retro:{label:'Retro',bg:'#f4e4c1',ink:'#6b4423',title:'retro booth'}
+};
+let THEME=THEMES.none;
+function setTheme(k){THEME=THEMES[k];document.querySelectorAll('#themes .chip').forEach(b=>b.classList.toggle('sel',b.dataset.k===k))}
+function bg(x,c){if(THEME.g){const g=x.createLinearGradient(0,0,0,c.height);g.addColorStop(0,THEME.g[0]);g.addColorStop(1,THEME.g[1]);x.fillStyle=g}else x.fillStyle=THEME.bg||frame;x.fillRect(0,0,c.width,c.height)}
+function inkc(){return THEME.ink||(frame==='#111111'?'#fff':'#222')}
+function capt(){return $('#cap').value.trim()||THEME.title}
+Object.entries(THEMES).forEach(([k,t])=>{const b=document.createElement('button');b.className='chip';b.dataset.k=k;b.textContent=t.label;
+  b.onclick=()=>{setTheme(k);if(k!=='none')document.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'))};$('#themes').append(b)});
+setTheme('none');
+const STK={none:{label:'Çıkartma yok',e:[]},love:{label:'💖 Aşk',e:['💖','✨','🎀']},party:{label:'🎉 Parti',e:['🎉','🎈','🥳']},cool:{label:'😎 Havalı',e:['😎','🔥','⚡']},star:{label:'⭐ Yıldız',e:['⭐','✨','🌟']}};
+const POS=[{x:.1,y:.16,r:-.25},{x:.9,y:.84,r:.25},{x:.88,y:.16,r:.2}];
+let stk='none';
+function placeStk(){
+  const d=$('#stk');d.innerHTML='';const e=STK[stk].e;if(!e.length||tpl==='duo')return;const sz=$('.stage').clientHeight*.22;
+  POS.forEach((p,i)=>{const sp=document.createElement('span');sp.textContent=e[i%e.length];
+    sp.style.cssText='left:'+p.x*100+'%;top:'+p.y*100+'%;font-size:'+sz+'px;transform:translate(-50%,-50%) rotate('+p.r+'rad)';d.append(sp)});
+}
+Object.entries(STK).forEach(([k,t])=>{const b=document.createElement('button');b.className='chip'+(k===stk?' sel':'');b.textContent=t.label;
+  b.onclick=()=>{stk=k;document.querySelectorAll('#stks .chip').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');placeStk()};$('#stks').append(b)});
+addEventListener('resize',placeStk);placeStk();
+
 /* ---- Uzaktan photobooth (PeerJS) ---- */
 let peer=null,conn=null,role=null,prevTpl='strip',myShots=null,theirShots=null;
 TPL.duo={label:'Uzaktan',n:4,w:480,h:360,asp:'4/3'};
 const CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',rm=t=>$('#rmsg').textContent=t;
 $('#remote').onclick=()=>{$('#cam').hidden=true;$('#rem').hidden=false};
-$('#rback').onclick=()=>{$('#rem').hidden=true;$('#cam').hidden=false};
+$('#rback').onclick=()=>{$('#rem').hidden=true;$('#cam').hidden=false;placeStk()};
 function connected(){
   if(tpl==='duo')return;
   prevTpl=tpl;tpl='duo';$('.stage').style.aspectRatio='8/3';setDots(4);
@@ -232,10 +269,10 @@ function tryCompose(){
   const left=role==='host'?mine:theirs,right=role==='host'?theirs:mine;
   Promise.all([...left,...right].map(u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=u}))).then(im=>{
     const w=480,h=360,P=40,G=24,FT=150,c=document.createElement('canvas');c.width=2*w+G+2*P;c.height=P+4*h+3*G+FT;
-    const x=c.getContext('2d');x.fillStyle=frame;x.fillRect(0,0,c.width,c.height);
+    const x=c.getContext('2d');bg(x,c);
     for(let i=0;i<4;i++){x.drawImage(im[i],P,P+i*(h+G));x.drawImage(im[4+i],P+w+G,P+i*(h+G))}
-    x.fillStyle=frame==='#111111'?'#fff':'#222';x.textAlign='center';
-    x.font='bold 44px Georgia,serif';x.fillText('photobooth',c.width/2,c.height-FT/2+5);
+    x.fillStyle=inkc();x.textAlign='center';
+    x.font='bold 44px Georgia,serif';x.fillText(capt(),c.width/2,c.height-FT/2+5);
     x.font='26px Georgia,serif';x.fillText(new Date().toLocaleDateString('tr-TR'),c.width/2,c.height-FT/2+45);
     c.toBlob(b=>{lastShots=[];blob=photoBlob=b;gifBlob=null;$('#mkgif').hidden=true;$('#viewrow').hidden=true;showView('photo');
       $('#out').src=URL.createObjectURL(b);$('#cam').hidden=true;$('#res').hidden=false},'image/jpeg',.92);
@@ -243,7 +280,7 @@ function tryCompose(){
 }
 $('#go').onclick=()=>{if(conn&&role==='host')conn.send({t:'go'});run()};
 
-$('#again').onclick=()=>{$('#res').hidden=true;$('#cam').hidden=false};
+$('#again').onclick=()=>{$('#res').hidden=true;$('#cam').hidden=false;placeStk()};
 $('#share').onclick=async()=>{
   const f=new File([blob],nm(),{type:blob.type});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){}}
