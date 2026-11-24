@@ -102,16 +102,20 @@ input::placeholder{color:var(--tx2)}
 .body{position:relative;flex:1;min-height:0;margin-top:-4px;padding-top:34px;display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(90deg,var(--mb2),var(--mb) 16%,var(--mb) 84%,var(--mb2));border-radius:16px 16px 6px 6px;box-shadow:inset 0 0 0 3px var(--mt),0 18px 40px #000a}
 .bulb{position:absolute;top:9px;width:13px;height:13px;border-radius:50%;background:#ffe3a0;box-shadow:0 0 8px #ffd27a;transition:.1s}
 .bulb.l{left:16px}.bulb.r{right:16px}.bulb.pop{background:#fff;box-shadow:0 0 34px 16px #fff6c8}
-.window{position:relative;width:90%;flex:none;transform-origin:50% 40%;transition:transform 1s cubic-bezier(.3,1.35,.5,1)}
-.machine.shooting .window{transform:scale(1.12)}
-.monitor{position:relative;padding:8px;background:linear-gradient(135deg,#8a8a90,#2b2b2e 45%,#6d6d72);border-radius:14px;box-shadow:0 0 0 3px var(--mt),0 10px 24px #000a}
-.monitor::after{content:"";position:absolute;inset:8px;border-radius:9px;background:linear-gradient(115deg,#fff3 0,#fff0 38%);pointer-events:none;z-index:3}
+.window{position:relative;width:94%;flex:none;transform-origin:50% 40%;transition:transform 1s cubic-bezier(.3,1.35,.5,1)}
+.machine.shooting .window{transform:scale(1.07)}
+.monitor{position:relative;padding:6px;background:linear-gradient(135deg,#8a8a90,#2b2b2e 45%,#6d6d72);border-radius:14px;box-shadow:0 0 0 3px var(--mt),0 10px 24px #000a}
+.monitor::after{content:"";position:absolute;inset:6px;border-radius:9px;background:linear-gradient(115deg,#fff3 0,#fff0 38%);pointer-events:none;z-index:3}
 .monitor .stage{border-radius:9px;box-shadow:none}
-.valance{position:absolute;left:-5px;right:-5px;top:-13px;height:26px;z-index:9;border-top:4px solid var(--mt);background:radial-gradient(circle at 10px 0,var(--mc2) 9.5px,transparent 10.5px) 0 14px/20px 12px repeat-x,linear-gradient(var(--mc1),var(--mc2)) 0 0/100% 14px no-repeat;filter:drop-shadow(0 4px 4px #0008)}
-.curtain{position:absolute;top:0;bottom:-3px;width:52%;z-index:7;border-bottom:5px double var(--mt);background:linear-gradient(#0000 55%,#0008),repeating-linear-gradient(90deg,#0006 0,#fff2 6px,#0000 11px,#0006 22px),var(--mc1);box-shadow:0 0 16px #000a;transform:scaleX(.5);transition:transform 1.2s cubic-bezier(.6,0,.25,1)}
-.curtain.l{left:0;transform-origin:left}.curtain.r{right:0;transform-origin:right}
-.curtain::after{content:"";position:absolute;top:60%;left:0;right:0;height:8px;background:var(--mt);box-shadow:0 2px 4px #000a}
-.machine.open .curtain{transform:scaleX(.15)}
+.rod{position:absolute;left:-10px;right:-10px;top:-13px;height:7px;border-radius:4px;z-index:9;background:linear-gradient(#f6e08a,var(--mt) 40%,#7a5c14);box-shadow:0 3px 5px #0009}
+.rod::before,.rod::after{content:"";position:absolute;top:-3px;width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b8,var(--mt) 55%,#7a5c14)}
+.rod::before{left:-6px}.rod::after{right:-6px}
+.curtain{position:absolute;top:-8px;bottom:-10px;width:38%;z-index:7;transform:scaleX(.62);transition:transform 1.3s cubic-bezier(.55,0,.2,1)}
+.curtain.l{left:-2px;transform-origin:left}.curtain.r{right:-2px;transform-origin:right}
+.curtain svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(5px 0 7px #0008);animation:drift 7s ease-in-out infinite alternate;transform-origin:50% 0}
+.curtain.r svg{filter:drop-shadow(-5px 0 7px #0008)}
+@keyframes drift{from{transform:skewX(-.7deg)}to{transform:skewX(.7deg)}}
+.machine.open .curtain{transform:scaleX(.3)}
 .plaque{flex:none;padding:4px 12px;font:700 11px Georgia,serif;letter-spacing:.16em;background:linear-gradient(#e9e2c8,#bfb28a);color:#3b2a14;border-radius:3px;box-shadow:0 1px 0 #fff8 inset,0 2px 4px #0006}
 .lower{flex:1;min-height:18px;width:86%;border-radius:6px 6px 0 0;background:repeating-linear-gradient(0deg,#0006 0 3px,#0000 3px 9px),linear-gradient(var(--mb2),var(--mb));box-shadow:inset 0 0 0 2px var(--mt)}
 .plinth{flex:none;height:12px;background:var(--mb2);border-radius:0 0 8px 8px;box-shadow:inset 0 0 0 3px var(--mt)}
@@ -149,7 +153,7 @@ canvas.drop{position:absolute;z-index:10;border:6px solid #fff;border-radius:6px
         <div class="window">
           <div class="monitor"><div class="stage"><video id="v" playsinline muted autoplay></video><video id="rv" playsinline muted autoplay hidden></video><div id="count"></div><div id="flash"></div><div id="stk"></div><div id="dots"></div>
             <button class="glass" id="flip" aria-label="Kamerayı çevir"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 0-14-5.3L4 9M4 4v5h5M4 12a8 8 0 0 0 14 5.3L20 15M20 20v-5h-5"/></svg></button></div></div>
-          <div class="valance"></div><div class="curtain l"></div><div class="curtain r"></div>
+          <div class="rod"></div><div class="curtain l"></div><div class="curtain r"></div>
         </div>
         <div class="plaque">4 POZ · 1 ŞERİT</div>
         <div class="lower"></div>
@@ -498,6 +502,20 @@ SKINS.forEach(([k,l,g])=>{const b=document.createElement('button');b.className='
 let sk='retro';try{sk=localStorage.getItem('skin')||'retro'}catch(e){}
 setSkin(SKINS.some(x=>x[0]===sk)?sk:'retro');
 $('#skinBtn').onclick=()=>{document.querySelector('[data-t="p-skin"]').click();openSheet(true)};
+const CP='M0 0H100C100 60 97 120 76 190C62 235 92 275 99 300H0Z',EDGE='M100 0C100 60 97 120 76 190C62 235 92 275 99 300';
+const FO=[['M13 0C16 90 8 200 6 300',.3],['M31 0C28 100 36 200 32 300',.22],['M50 0C53 90 46 210 49 300',.3],['M67 0C64 95 70 190 66 300',.2],['M84 0C86 80 80 170 78 215',.28]];
+function curtainSVG(i){
+  const st=[[0,2],[.1,1],[.19,2],[.31,1],[.41,2],[.55,1],[.64,2],[.78,1],[.88,2],[1,1]].map(a=>'<stop offset="'+a[0]+'" style="stop-color:var(--mc'+a[1]+')"/>').join('');
+  const body='<path d="'+CP+'" fill="url(#cx'+i+')"/><path d="'+CP+'" fill="url(#cy'+i+')"/>'
+   +FO.map(f=>'<path d="'+f[0]+'" fill="none" stroke="#000" stroke-opacity="'+f[1]+'" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"/><path d="'+f[0]+'" transform="translate(5 0)" fill="none" stroke="#fff" stroke-opacity=".11" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>').join('')
+   +'<path d="'+EDGE+'" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="2" vector-effect="non-scaling-stroke"/>'
+   +'<path d="M0 183C38 194 62 192 78 187" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+   +'<path d="M0 181C38 192 62 190 78 185" fill="none" style="stroke:var(--mt)" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+   +'<path d="M0 298.5H99" fill="none" style="stroke:var(--mt)" stroke-width="3" vector-effect="non-scaling-stroke"/>';
+  return '<svg viewBox="0 0 100 300" preserveAspectRatio="none"><defs><linearGradient id="cx'+i+'">'+st+'</linearGradient><linearGradient id="cy'+i+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-opacity=".5"/><stop offset=".2" stop-opacity="0"/><stop offset=".72" stop-opacity=".05"/><stop offset="1" stop-opacity=".45"/></linearGradient></defs>'
+   +(i?'<g transform="translate(100 0) scale(-1 1)">'+body+'</g>':body)+'</svg>';
+}
+document.querySelectorAll('.curtain').forEach((c,i)=>c.innerHTML=curtainSVG(i));
 buildFilm();
 function pop(){count.classList.remove('pop');void count.offsetWidth;count.classList.add('pop')}
 function confetti(){const k=['#ff453a','#ff9f0a','#ffd60a','#30d158','#0a84ff','#bf5af2'];
